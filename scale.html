@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html>
+
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Random Sheet Generator</title>
+
+  <style>
+    body {
+  font-family: Inter, system-ui, sans-serif;
+  background: #f5f5f5;
+  text-align: center;
+  padding: 40px;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 25px 30px;
+  display: inline-block;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+h1 {
+  font-size: 22px;
+  margin-bottom: 18px;
+}
+
+.note-buttons,
+.accidental-buttons,
+.scale-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 12px 0;
+  flex-wrap: wrap;
+}
+
+button {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+button.active {
+  background: #222;
+  color: white;
+  border-color: #222;
+}
+
+.generate-btn {
+  margin-top: 12px;
+  width: 100%;
+  font-weight: bold;
+}
+
+#result {
+  margin-top: 10px;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+#scaleResult {
+  margin-top: 16px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+  </style>
+
+  
+</head>
+<body>
+  <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Scale Generator</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="card">
+
+  <h1>Select Root Note</h1>
+
+  <div class="note-buttons" id="noteButtons"></div>
+
+  <div class="accidental-buttons">
+    <button onclick="setAccidental('natural')">Natural</button>
+    <button onclick="setAccidental('flat')">Flat</button>
+    <button onclick="setAccidental('sharp')">Sharp</button>
+  </div>
+
+  <h1>Select Scale Type</h1>
+
+  <div class="scale-buttons">
+    <button data-scale="major" onclick="setScaleType('major')">Major</button>
+    <button data-scale="naturalMinor" onclick="setScaleType('naturalMinor')">Natural Minor</button>
+    <button data-scale="harmonicMinor" onclick="setScaleType('harmonicMinor')">Harmonic Minor</button>
+    <button data-scale="melodicMinor" onclick="setScaleType('melodicMinor')">Melodic Minor</button>
+  </div>
+
+  <div id="result"></div>
+
+  <button class="generate-btn" onclick="generateScale()">Generate</button>
+
+  <div id="scaleResult"></div>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
+
+
+  <script>
+    // ==========================
+// BASE NOTE DATA
+// ==========================
+
+const baseNotes = ["C", "D", "E", "F", "G", "A", "B"];
+
+const sharpMap = {
+  C: "C#",
+  D: "D#",
+  E: "E#",
+  F: "F#",
+  G: "G#",
+  A: "A#",
+  B: "B#"
+};
+
+const flatMap = {
+  C: "Cb",
+  D: "Db",
+  E: "Eb",
+  F: "Fb",
+  G: "Gb",
+  A: "Ab",
+  B: "Bb"
+};
+
+const naturalPitch = {
+  C: 0,
+  D: 2,
+  E: 4,
+  F: 5,
+  G: 7,
+  A: 9,
+  B: 11
+};
+
+// ==========================
+// SCALE PATTERNS
+// ==========================
+
+const scalePatterns = {
+  major: [2, 2, 1, 2, 2, 2, 1],
+  naturalMinor: [2, 1, 2, 2, 1, 2, 2],
+  harmonicMinor: [2, 1, 2, 2, 1, 3, 1],
+  melodicMinor: [2, 1, 2, 2, 2, 2, 1]
+};
+
+// ==========================
+// STATE
+// ==========================
+
+let selectedNote = {
+  base: "C",
+  accidental: "natural"
+};
+
+let selectedScale = "major";
+
+// ==========================
+// BUILD NOTE BUTTONS
+// ==========================
+
+const noteButtons = document.getElementById("noteButtons");
+
+baseNotes.forEach(note => {
+  const btn = document.createElement("button");
+  btn.textContent = note;
+  btn.onclick = () => setBaseNote(note);
+  noteButtons.appendChild(btn);
+});
+
+// ==========================
+// UI CONTROL
+// ==========================
+
+function setBaseNote(note) {
+  selectedNote.base = note;
+  updateUI();
+}
+
+function setAccidental(type) {
+  selectedNote.accidental = type;
+  updateUI();
+}
+
+function setScaleType(type) {
+  selectedScale = type;
+  updateUI();
+}
+
+function getSelectedNote() {
+  const { base, accidental } = selectedNote;
+
+  if (accidental === "sharp") return sharpMap[base];
+  if (accidental === "flat") return flatMap[base];
+
+  return base;
+}
+
+// ==========================
+// NOTE → SEMITONE
+// ==========================
+
+function noteToPitch(note) {
+  let base = note[0];
+  let pitch = naturalPitch[base];
+
+  if (note.includes("##")) pitch += 2;
+  else if (note.includes("#")) pitch += 1;
+
+  if (note.includes("bb")) pitch -= 2;
+  else if (note.includes("b")) pitch -= 1;
+
+  return (pitch + 12) % 12;
+}
+
+// ==========================
+// UI UPDATE
+// ==========================
+
+function updateUI() {
+  document.querySelectorAll(".note-buttons button").forEach(btn => {
+    btn.classList.toggle("active", btn.textContent === selectedNote.base);
+  });
+
+  const accButtons = document.querySelectorAll(".accidental-buttons button");
+  accButtons.forEach(btn => btn.classList.remove("active"));
+
+  if (selectedNote.accidental === "natural") accButtons[0].classList.add("active");
+  if (selectedNote.accidental === "flat") accButtons[1].classList.add("active");
+  if (selectedNote.accidental === "sharp") accButtons[2].classList.add("active");
+
+  document.querySelectorAll(".scale-buttons button").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.scale === selectedScale);
+  });
+
+  document.getElementById("result").textContent =
+    "Selected note: " + getSelectedNote();
+}
+
+// ==========================
+// SCALE GENERATION
+// ==========================
+
+function generateScale() {
+  const root = getSelectedNote();
+  const pattern = scalePatterns[selectedScale];
+  const rootPitch = noteToPitch(root);
+
+  let scale = [];
+  let pitch = rootPitch;
+
+  let letterIndex = baseNotes.indexOf(root[0]);
+  let letterSequence = [];
+
+  for (let i = 0; i < 7; i++) {
+    letterSequence.push(baseNotes[(letterIndex + i) % 7]);
+  }
+
+  scale.push(root);
+
+  for (let i = 0; i < 6; i++) {
+    pitch = (pitch + pattern[i]) % 12;
+
+    let targetLetter = letterSequence[i + 1];
+    let naturalValue = naturalPitch[targetLetter];
+
+    let diff = (pitch - naturalValue + 12) % 12;
+
+    let accidental = "";
+
+    if (diff === 1) accidental = "#";
+    if (diff === 2) accidental = "##";
+
+    if (diff === 11) accidental = "b";
+    if (diff === 10) accidental = "bb";
+
+    scale.push(targetLetter + accidental);
+  }
+
+  const labelMap = {
+    major: "Major",
+    naturalMinor: "Natural Minor",
+    harmonicMinor: "Harmonic Minor",
+    melodicMinor: "Melodic Minor"
+  };
+
+  document.getElementById("scaleResult").textContent =
+    labelMap[selectedScale] + " scale: " + scale.join(" – ");
+}
+
+// ==========================
+// INIT
+// ==========================
+
+updateUI();
+
+// ==========================
+// EXPORT
+// ==========================
+
+window.NoteSelector = {
+  setBaseNote,
+  setAccidental,
+  setScaleType,
+  getSelectedNote,
+  generateScale
+};
+
+
+  </script>
+</body>
+</html>
+
