@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Random Sheet Generator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #f5f5f5;
+  text-align: center;
+  padding: 50px;
+  position: relative;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  display: inline-block;
+}
+
+.botones {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+button {
+  padding: 10px 20px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #e0e0e0;
+}
+
+#volver {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 12px;
+  padding: 5px 10px;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  display: none;
+}
+
+#resultado {
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
+  margin: 30px auto 0;
+  border: 1px solid #ccc;
+  gap: 8px;
+}
+
+.fila {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+}
+
+.nota {
+  font-size: 28px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ccc;
+  aspect-ratio: 1 / 1;
+}
+
+#seedInput {
+  padding: 8px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 140px;
+}
+
+#semillaDisplay {
+  margin-top: 15px;
+  font-size: 13px;
+  color: #555;
+}
+
+.footer {
+  margin-top: 18px;
+  font-size: 12px;
+  color: #777;
+}
+</style>
+</head>
+
+<body>
+
+<button id="volver" onclick="volverInicio()">Back</button>
+
+<div class="card">
+  <h1 id="titulo">Random Sheet Generator</h1>
+
+  <div class="botones" id="botonera">
+    <button onclick="mostrarListaConSemilla(generarSemilla('b'))">b Mode</button>
+    <button onclick="mostrarListaConSemilla(generarSemilla('c'))">Random Mode</button>
+    <button onclick="mostrarListaConSemilla(generarSemilla('a'))"># Mode</button>
+  </div>
+
+  <div id="inputSemilla">
+    <input type="text" id="seedInput" placeholder="Enter seed...">
+  </div>
+
+  <div id="resultado"></div>
+  <div id="semillaDisplay"></div>
+
+  <div class="footer">by Juan Naranjo</div>
+</div>
+
+<script>
+const notasSostenido = {
+  1:"C",2:"C#",3:"D",4:"D#",5:"E",6:"F",7:"F#",8:"G",9:"G#",10:"A",11:"A#",12:"B"
+};
+
+const notasBemol = {
+  1:"C",2:"Db",3:"D",4:"Eb",5:"E",6:"F",7:"Gb",8:"G",9:"Ab",10:"A",11:"Bb",12:"B"
+};
+
+function generarSemilla(modo) {
+  const numeros = Math.floor(Math.random() * 1e8).toString().padStart(8,'0');
+  return modo + numeros;
+}
+
+function mulberry32(a) {
+  return function() {
+    let t = a += 0x6D2B79F5;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  }
+}
+
+function parseSemilla(seed) {
+  const letra = seed[0].toLowerCase();
+  const modo = letra === 'a' ? '#' : letra === 'b' ? 'b' : 'random';
+  const numeros = parseInt(seed.slice(1), 10);
+  return { modo, numeros };
+}
+
+function shuffle(array, rng) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+function mostrarListaConSemilla(seed) {
+  document.getElementById('botonera').style.display = 'none';
+  document.getElementById('titulo').style.display = 'none';
+  document.getElementById('volver').style.display = 'inline-block';
+  document.getElementById('inputSemilla').style.display = 'none';
+
+  const { modo, numeros } = parseSemilla(seed);
+  const rng = mulberry32(numeros);
+  const resultado = document.getElementById('resultado');
+  const seedLabel = document.getElementById('semillaDisplay');
+
+  resultado.innerHTML = '';
+  seedLabel.innerHTML = `Seed: <b>${seed}</b>`;
+
+  for (let fila = 0; fila < 12; fila++) {
+    let lista = shuffle([...Array(12).keys()].map(n => n + 1), rng);
+    const filaDiv = document.createElement('div');
+    filaDiv.className = 'fila';
+
+    lista.forEach(n => {
+      let nota;
+      if (modo === 'random') {
+        nota = (rng() < 0.5 ? notasSostenido : notasBemol)[n];
+      } else {
+        nota = (modo === 'b' ? notasBemol : notasSostenido)[n];
+      }
+
+      const div = document.createElement('div');
+      div.className = 'nota';
+      div.textContent = nota;
+      filaDiv.appendChild(div);
+    });
+
+    resultado.appendChild(filaDiv);
+  }
+}
+
+function usarSemillaManual() {
+  const input = document.getElementById('seedInput').value.trim();
+  if (/^[a-zA-Z][0-9]{8}$/.test(input)) {
+    mostrarListaConSemilla(input);
+  } else {
+    alert("Invalid seed. Must be a letter followed by 8 numbers.");
+  }
+}
+
+document.getElementById('seedInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') usarSemillaManual();
+});
+
+function volverInicio() {
+  document.getElementById('botonera').style.display = 'flex';
+  document.getElementById('titulo').style.display = 'block';
+  document.getElementById('volver').style.display = 'none';
+  document.getElementById('inputSemilla').style.display = 'block';
+  document.getElementById('resultado').innerHTML = '';
+  document.getElementById('semillaDisplay').innerHTML = '';
+}
+</script>
+
+</body>
+</html>
