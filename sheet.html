@@ -91,7 +91,7 @@ h1 {
   </div>
 
   <div class="seed" id="seed"></div>
-  <div class="footer">by Juan Naranjo</div>
+  <div class="footer">by Juan Naranjo / v2.0</div>
 </div>
 
 <script>
@@ -227,7 +227,7 @@ if (type==="c") {
     "Mixed accidentals";
 
   document.getElementById("title").textContent =
-    `Chromatic Random Notes Sheet – ${label}`;
+    `Random Notes Sheet – ${label}`;
 
   sheet.style.gridTemplateRows = "repeat(12,1fr)";
 
@@ -268,7 +268,7 @@ if (type==="s") {
   const displayAcc = acc === "n" ? "" : acc;
 
   document.getElementById("title").textContent =
-    `Scale Random Notes Sheet – ${root}${displayAcc} ${scaleNameMap[scaleType]}`;
+    `Random Notes Sheet – ${root}${displayAcc} ${scaleNameMap[scaleType]}`;
 
   const scaleNotes = buildScale(root, acc, scaleType);
 

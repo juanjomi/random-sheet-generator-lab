@@ -121,7 +121,7 @@ button.active {
     Generate Sheet
   </button>
 
-  <div class="footer">by Juan Naranjo</div>
+  <div class="footer">by Juan Naranjo / v2.0</div>
 </div>
 
 <script>
@@ -202,7 +202,7 @@ makeButtons(
   [
     { label: "♭", value: "b" },
     { label: "♮", value: "n" },
-    { label: "♯", value: "♯" }   // ← CAMBIO CLAVE
+    { label: "♯", value: "♯" }  
   ],
   (v,b) => { acc = v; activate(b.parentNode, b); updatePreview(); }
 );
@@ -211,9 +211,9 @@ makeButtons(
   document.getElementById("scale-buttons"),
   [
     { label: "Major", value: "maj" },
-    { label: "Minor (Nat)", value: "nat" },
-    { label: "Minor (Har)", value: "har" },
-    { label: "Minor (Mel)", value: "mel" }
+    { label: "Natural Minor", value: "nat" },
+    { label: "Harmonic Minor", value: "har" },
+    { label: "Melodic Minor", value: "mel" }
   ],
   (v,b) => { scale = v; activate(b.parentNode, b); updatePreview(); }
 );
