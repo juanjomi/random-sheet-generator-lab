@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Random Notes Sheets</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: #f5f5f5;
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0,0,0,.1);
+  padding: 20px;
+  width: 90vw;
+  max-width: 420px;
+}
+
+h1 {
+  font-size: 18px;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.section {
+  margin-bottom: 14px;
+}
+
+.section h2 {
+  font-size: 13px;
+  margin-bottom: 6px;
+  color: #555;
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+button {
+  flex: 1;
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background: #fafafa;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+button.active {
+  background: #222;
+  color: white;
+  border-color: #222;
+}
+
+.preview {
+  margin-top: 10px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.generate {
+  margin-top: 14px;
+  width: 100%;
+  padding: 8px;
+  border-radius: 8px;
+  border: none;
+  background: #000;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.footer {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 12px;
+  color: #777;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+  <h1>Scale Random Notes Sheets</h1>
+
+  <div class="section">
+    <h2>Root</h2>
+    <div class="buttons" id="root-buttons"></div>
+  </div>
+
+  <div class="section">
+    <h2>Accidental</h2>
+    <div class="buttons" id="acc-buttons"></div>
+  </div>
+
+  <div class="section">
+    <h2>Scale</h2>
+    <div class="buttons" id="scale-buttons"></div>
+  </div>
+
+  <div class="preview" id="preview"></div>
+
+  <button class="generate" id="generate">
+    Generate Sheet
+  </button>
+
+  <div class="footer">by Juan Naranjo</div>
+</div>
+
+<script>
+/* ===== MUSICAL CORE ===== */
+
+const LETTERS = ["C","D","E","F","G","A","B"];
+
+const NATURAL_PITCH = { C:0, D:2, E:4, F:5, G:7, A:9, B:11 };
+
+// internal system (supports double accidentals, even if UI doesn’t expose them)
+const ACC_VAL = {
+  "bb": -2,
+  "b": -1,
+  "n": 0,
+  "♯": 1,
+  "♯♯": 2
+};
+
+const SCALE_INTERVALS = {
+  maj:[0,2,4,5,7,9,11],
+  nat:[0,2,3,5,7,8,10],
+  har:[0,2,3,5,7,8,11],
+  mel:[0,2,3,5,7,9,11]
+};
+
+function buildScale(root, acc, type) {
+  const startIndex = LETTERS.indexOf(root);
+  const letters = [];
+
+  for (let i = 0; i < 7; i++) {
+    letters.push(LETTERS[(startIndex + i) % 7]);
+  }
+
+  const rootPitch =
+    NATURAL_PITCH[root] + (ACC_VAL[acc] ?? 0);
+
+  return letters.map((l, i) => {
+    const pitch = (rootPitch + SCALE_INTERVALS[type][i]) % 12;
+    let diff = (pitch - NATURAL_PITCH[l] + 12) % 12;
+    if (diff > 6) diff -= 12;
+
+    const a = Object.keys(ACC_VAL).find(k => ACC_VAL[k] === diff) || "n";
+    return l + (a === "n" ? "" : a);
+  });
+}
+
+
+/* ===== UI STATE ===== */
+
+let root = "C";
+let acc = "n";
+let scale = "maj";
+
+function makeButtons(container, values, onClick) {
+  values.forEach(v=>{
+    const b = document.createElement("button");
+    b.textContent = v.label;
+    b.onclick = () => onClick(v.value, b);
+    container.appendChild(b);
+  });
+}
+
+function activate(container, btn) {
+  [...container.children].forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+}
+
+/* ===== BUTTONS ===== */
+
+makeButtons(
+  document.getElementById("root-buttons"),
+  LETTERS.map(l => ({ label: l, value: l })),
+  (v,b) => { root = v; activate(b.parentNode, b); updatePreview(); }
+);
+
+makeButtons(
+  document.getElementById("acc-buttons"),
+  [
+    { label: "♭", value: "b" },
+    { label: "♮", value: "n" },
+    { label: "♯", value: "♯" }   // ← CAMBIO CLAVE
+  ],
+  (v,b) => { acc = v; activate(b.parentNode, b); updatePreview(); }
+);
+
+makeButtons(
+  document.getElementById("scale-buttons"),
+  [
+    { label: "Major", value: "maj" },
+    { label: "Minor (Nat)", value: "nat" },
+    { label: "Minor (Har)", value: "har" },
+    { label: "Minor (Mel)", value: "mel" }
+  ],
+  (v,b) => { scale = v; activate(b.parentNode, b); updatePreview(); }
+);
+
+/* ===== PREVIEW ===== */
+
+function updatePreview() {
+  document.getElementById("preview").textContent =
+    buildScale(root, acc, scale).join(" ");
+}
+updatePreview();
+
+/* ===== SEED ===== */
+
+document.getElementById("generate").onclick = () => {
+  const hex = Math.floor(Math.random()*0xffffff)
+    .toString(16)
+    .padStart(6, "0");
+
+  const seed = `s:${root}${acc}:${scale}-${hex}`;
+  window.location.href = `sheet.html?seed=${seed}`;
+};
+</script>
+
+</body>
+</html>
